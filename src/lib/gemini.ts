@@ -16,13 +16,18 @@ export function setApiKey(key: string): void {
 // ─────────────────────────────────────────────
 export function buildShotListPrompt(
   story: string,
+  intent: string,
   genre: Genre,
   style: Style,
   numShots: number
 ): string {
-  return `You are an expert Hollywood film director and cinematographer. Analyze the following story/script and create a professional, director-ready shot list.
+  const intentLine = intent.trim()
+    ? `\nVIDEO INTENT / GOAL:\n${intent.trim()}\n`
+    : '';
 
-STORY / SCRIPT:
+  return `You are an expert director and advertising creative specialising in short-form video content for AI video platforms (Grok, Gemini Veo, Kling, Sora, Runway). Turn the following concept into a professional, ready-to-shoot shot list for a video no longer than 2 minutes.
+${intentLine}
+CONCEPT / IDEA:
 """
 ${story}
 """
@@ -35,7 +40,7 @@ PARAMETERS:
 Return ONLY a valid JSON object with this EXACT structure (no markdown, no explanation, just JSON):
 
 {
-  "title": "Scene or project title based on the story",
+  "title": "Short punchy title for this video concept",
   "genre": "${genre}",
   "mood": "Overall emotional tone and atmosphere",
   "totalShots": ${numShots},
@@ -52,18 +57,20 @@ Return ONLY a valid JSON object with this EXACT structure (no markdown, no expla
       "lighting": "Detailed lighting setup and rationale",
       "colorPalette": "Dominant colors and color grading direction",
       "mood": "Emotional impact this shot should convey",
-      "duration": "Estimated screen time e.g. 2-3 seconds",
+      "duration": "Estimated screen time. MUST be exactly '5 seconds' or '10 seconds'",
       "transition": "How this shot transitions to the next e.g. Hard cut, Dissolve, Match cut",
-      "aiVideoPrompt": "A ready-to-use AI video generation prompt using the format: [Camera movement] [Subject/action] [Setting description] [Lighting & atmosphere] [Visual style] [Technical specs]. Make this highly specific and cinematic.",
-      "notes": "Optional director notes, e.g. focus pulls, practical considerations, alternative takes"
+      "aiVideoPrompt": "A ready-to-use AI video generation prompt: [Camera movement] [Subject/action] [Setting] [Lighting & atmosphere] [Visual style] [Specs]. Self-contained — paste directly into Grok Aurora, Gemini Veo, Kling, Sora, or Runway.",
+      "notes": "Director notes: pacing cue, energy level, viewer emotion, any practical tip"
     }
   ]
 }
 
 IMPORTANT RULES:
+- Total video duration across ALL shots MUST stay under 2 minutes (120 seconds) — this is for short ads and promos
+- Clip durations MUST be exactly 5 seconds or 10 seconds to align with standard AI video generation tools.
+- Every shot must earn its place — tight pacing, maximum impact per second
+- Make aiVideoPrompt self-contained and ready to paste into Grok Aurora, Gemini Veo, Kling, Sora, or Runway
 - Use professional cinema terminology throughout
-- Make aiVideoPrompt self-contained and ready to paste into Kling, Sora, Veo, or Runway
-- Each shot must serve the story — explain WHY each shot choice matters in the notes
 - Vary shot types for dynamic storytelling rhythm
 - Match ${style} visual style in all choices`;
 }
@@ -79,12 +86,11 @@ export async function generateShotImage(
   const apiKey = getApiKey();
   const genAI = new GoogleGenerativeAI(apiKey);
 
-  // Use gemini-2.0-flash-preview-image-generation for image output
   const model = genAI.getGenerativeModel({
     model: 'gemini-2.0-flash-preview-image-generation',
   });
 
-  const imagePrompt = `Create a cinematic storyboard panel sketch for a film shot. Style: rough professional storyboard, black and white with subtle grey tones, clean lines, directional arrows for camera movement where applicable.
+  const imagePrompt = `Create a cinematic storyboard panel sketch for a short-form ad or promo video shot. Style: rough professional storyboard, black and white with subtle grey tones, clean lines, directional arrows for camera movement where applicable.
 
 Shot type: ${shotType}
 Visual style: ${style}
@@ -95,7 +101,6 @@ Make it look like a professional director's storyboard sketch - clean, expressiv
   const result = await model.generateContent([{ text: imagePrompt }]);
   const response = result.response;
 
-  // Extract inline image data from response parts
   const parts = response.candidates?.[0]?.content?.parts || [];
   for (const part of parts) {
     if (part.inlineData?.mimeType?.startsWith('image/')) {

@@ -11,9 +11,10 @@ import { SettingsModal } from './components/SettingsModal';
 function App() {
   // Input state
   const [story, setStory] = useState('');
-  const [genre, setGenre] = useState<Genre>('Drama');
+  const [intent, setIntent] = useState('');
+  const [genre, setGenre] = useState<Genre>('Ad / Commercial');
   const [style, setStyle] = useState<Style>('Cinematic');
-  const [numShots, setNumShots] = useState(10);
+  const [numShots, setNumShots] = useState(8);
 
   // UI state
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -24,7 +25,7 @@ function App() {
   const { history, loading: historyLoading, save, remove, clear } = useHistory();
 
   const handleGenerate = useCallback(async () => {
-    const parsed = await generate(story, genre, style, numShots);
+    const parsed = await generate(story, intent, genre, style, numShots);
     if (parsed) {
       const entry: HistoryEntry = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -35,12 +36,11 @@ function App() {
         result: parsed,
       };
       await save(entry);
-      // Scroll to results
       setTimeout(() => {
         document.getElementById('shot-list-section')?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
     }
-  }, [generate, story, genre, style, numShots, save]);
+  }, [generate, story, intent, genre, style, numShots, save]);
 
   const handleHistorySelect = (entry: HistoryEntry) => {
     setStory(entry.storyInput);
@@ -83,11 +83,13 @@ function App() {
       <main className="main-content">
         <Hero
           story={story}
+          intent={intent}
           genre={genre}
           style={style}
           numShots={numShots}
           status={status}
           onStoryChange={setStory}
+          onIntentChange={setIntent}
           onGenreChange={setGenre}
           onStyleChange={setStyle}
           onNumShotsChange={setNumShots}
