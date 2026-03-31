@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import type { Genre, Style } from '../types';
+import type { Genre, Style, TargetModel } from '../types';
 
 export const DEFAULT_API_KEY = 'AIzaSyAG3bMOHqi_nb8NZRSnDB-yTW3O5Yt_k6Q';
 
@@ -17,6 +17,7 @@ export function setApiKey(key: string): void {
 export function buildShotListPrompt(
   story: string,
   intent: string,
+  targetModel: TargetModel = 'Universal',
   genre: Genre,
   style: Style,
   numShots: number
@@ -25,8 +26,29 @@ export function buildShotListPrompt(
     ? `\nVIDEO INTENT / GOAL:\n${intent.trim()}\n`
     : '';
 
-  return `You are an expert director and advertising creative specialising in short-form video content for AI video platforms (Grok, Gemini Veo, Kling, Sora, Runway). Turn the following concept into a professional, ready-to-shoot shot list for a video no longer than 2 minutes.
+  let modelRules = 'Make aiVideoPrompt self-contained and ready to paste into Grok, Veo, Kling, Sora, or Runway.';
+  let promptStructure = '[Camera movement] [Subject/action] [Setting] [Lighting & atmosphere] [Visual style] [Specs]';
+  
+  if (targetModel === 'Grok') {
+    modelRules = 'Grok Aurora/Imagine prefers: Subject + Motion + Camera + Style + Atmosphere/Lighting. Keep it concise. Use strong action verbs. Add "photorealistic, 4K" if applicable.';
+    promptStructure = '[Subject] [Motion] [Camera] [Style] [Atmosphere/Lighting]';
+  } else if (targetModel === 'Veo') {
+    modelRules = 'Gemini Veo prefers: [Cinematography/Camera] + [Subject] + [Action] + [Context/Setting] + [Style & Ambiance]. Use natural language, avoid quotes for dialogue (use colon). Focus on ONE clear idea per clip.';
+    promptStructure = '[Cinematography/Camera] [Subject] [Action] [Context/Setting] [Style & Ambiance]';
+  } else if (targetModel === 'Kling') {
+    modelRules = 'Kling prefers: Subject + Action + Context + Style. Start with scene/setting, then characters/action/camera, then style. Simple scenes with one main action perform best.';
+    promptStructure = '[Setting/Context] [Subject] [Action] [Camera] [Style]';
+  } else if (targetModel === 'Sora') {
+    modelRules = 'Sora prefers highly descriptive, cinematic language with physics-aware details. Focus on detailed camera movements, specific lighting physics, and world-building.';
+    promptStructure = '[Descriptive Camera & Movement] [Subject & Physics] [Setting Detail] [Lighting] [Cinematic Style]';
+  }
+
+  return `You are an expert director and advertising creative specialising in short-form video content for AI video platforms. Turn the following concept into a professional, ready-to-shoot shot list.
 ${intentLine}
+TARGET AI MODEL FORMATTING:
+Optimize the "aiVideoPrompt" exactly for ${targetModel}.
+Rule: ${modelRules}
+
 CONCEPT / IDEA:
 """
 ${story}
@@ -59,7 +81,7 @@ Return ONLY a valid JSON object with this EXACT structure (no markdown, no expla
       "mood": "Emotional impact this shot should convey",
       "duration": "Estimated screen time. MUST be exactly '5 seconds' or '10 seconds'",
       "transition": "How this shot transitions to the next e.g. Hard cut, Dissolve, Match cut",
-      "aiVideoPrompt": "A ready-to-use AI video generation prompt: [Camera movement] [Subject/action] [Setting] [Lighting & atmosphere] [Visual style] [Specs]. Self-contained — paste directly into Grok Aurora, Gemini Veo, Kling, Sora, or Runway.",
+      "aiVideoPrompt": "A ready-to-use ${targetModel} prompt. Structure STRICTLY as: ${promptStructure}. Self-contained.",
       "notes": "Director notes: pacing cue, energy level, viewer emotion, any practical tip"
     }
   ]
@@ -69,7 +91,7 @@ IMPORTANT RULES:
 - Total video duration across ALL shots MUST stay under 2 minutes (120 seconds) — this is for short ads and promos
 - Clip durations MUST be exactly 5 seconds or 10 seconds to align with standard AI video generation tools.
 - Every shot must earn its place — tight pacing, maximum impact per second
-- Make aiVideoPrompt self-contained and ready to paste into Grok Aurora, Gemini Veo, Kling, Sora, or Runway
+- Make aiVideoPrompt self-contained and formatted exclusively for ${targetModel} using the structure requested.
 - Use professional cinema terminology throughout
 - Vary shot types for dynamic storytelling rhythm
 - Match ${style} visual style in all choices`;

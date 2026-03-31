@@ -91,6 +91,10 @@ export function HistoryPanel({ isOpen, history, loading, onSelect, onDelete, onC
             </div>
           ))}
         </div>
+
+        <div style={{ padding: '1rem', marginTop: 'auto', borderTop: '1px solid var(--border)', fontSize: '11px', color: 'var(--text-muted)' }}>
+          <strong>Note:</strong> History is saved locally in this browser. Clearing cache will delete projects.
+        </div>
       </aside>
     </>
   );

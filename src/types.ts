@@ -31,6 +31,7 @@ export interface HistoryEntry {
   storyInput: string;
   genre: string;
   style: string;
+  targetModel?: string;
   result: ShotListResult;
 }
 
@@ -55,5 +56,12 @@ export type Style =
   | 'Social Media'
   | 'Anime / Animation'
   | 'Horror';
+
+export type TargetModel =
+  | 'Universal'
+  | 'Grok'
+  | 'Veo'
+  | 'Kling'
+  | 'Sora';
 
 export type GenerationStatus = 'idle' | 'generating' | 'done' | 'error';

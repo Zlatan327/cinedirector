@@ -1,4 +1,6 @@
-import type { GenerationStatus, Genre, Style } from '../types';
+import type { GenerationStatus, Genre, Style, TargetModel } from '../types';
+
+const TARGET_MODELS: TargetModel[] = ['Universal', 'Grok', 'Veo', 'Kling', 'Sora'];
 
 const GENRES: Genre[] = [
   'Ad / Commercial', 'Reels / Short', 'Drama', 'Action', 'Romance', 'Horror', 'Comedy',
@@ -22,20 +24,22 @@ interface Props {
   intent: string;
   genre: Genre;
   style: Style;
+  targetModel: TargetModel;
   numShots: number;
   status: GenerationStatus;
   onStoryChange: (v: string) => void;
   onIntentChange: (v: string) => void;
   onGenreChange: (v: Genre) => void;
   onStyleChange: (v: Style) => void;
+  onTargetModelChange: (v: TargetModel) => void;
   onNumShotsChange: (v: number) => void;
   onGenerate: () => void;
   onReset: () => void;
 }
 
 export function Hero({
-  story, intent, genre, style, numShots, status,
-  onStoryChange, onIntentChange, onGenreChange, onStyleChange, onNumShotsChange,
+  story, intent, genre, style, targetModel, numShots, status,
+  onStoryChange, onIntentChange, onGenreChange, onStyleChange, onTargetModelChange, onNumShotsChange,
   onGenerate, onReset,
 }: Props) {
   const isGenerating = status === 'generating';
@@ -252,8 +256,23 @@ export function Hero({
               </div>
 
               <div className="control-group">
-                <label className="control-label" htmlFor="shots-slider">
-                  Shots: <strong style={{ color: 'var(--accent-light)' }}>{numShots}</strong>
+                <label className="control-label" htmlFor="model-select">Target AI Model</label>
+                <select
+                  id="model-select"
+                  className="control-select"
+                  value={targetModel}
+                  onChange={(e) => onTargetModelChange(e.target.value as TargetModel)}
+                >
+                  {TARGET_MODELS.map((m) => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+
+              <div className="control-group" style={{ gridColumn: '1 / -1' }}>
+                <label className="control-label" htmlFor="shots-slider" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>Shots: <strong style={{ color: 'var(--accent-light)' }}>{numShots}</strong></span>
+                  <span style={{ color: 'rgba(253,252,250,0.3)', textTransform: 'none', letterSpacing: 'normal', fontWeight: 500 }}>
+                    (≈ {numShots * 10}s total generated media)
+                  </span>
                 </label>
                 <input
                   id="shots-slider"

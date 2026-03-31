@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { Genre, Style, ShotListResult, HistoryEntry } from './types';
+import type { Genre, Style, TargetModel, ShotListResult, HistoryEntry } from './types';
 import { useGemini } from './hooks/useGemini';
 import { useHistory } from './hooks/useHistory';
 import { Navbar } from './components/Navbar';
@@ -14,6 +14,7 @@ function App() {
   const [intent, setIntent] = useState('');
   const [genre, setGenre] = useState<Genre>('Ad / Commercial');
   const [style, setStyle] = useState<Style>('Cinematic');
+  const [targetModel, setTargetModel] = useState<TargetModel>('Universal');
   const [numShots, setNumShots] = useState(8);
 
   // UI state
@@ -25,7 +26,7 @@ function App() {
   const { history, loading: historyLoading, save, remove, clear } = useHistory();
 
   const handleGenerate = useCallback(async () => {
-    const parsed = await generate(story, intent, genre, style, numShots);
+    const parsed = await generate(story, intent, targetModel, genre, style, numShots);
     if (parsed) {
       const entry: HistoryEntry = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -33,6 +34,7 @@ function App() {
         storyInput: story,
         genre,
         style,
+        targetModel,
         result: parsed,
       };
       await save(entry);
@@ -40,12 +42,13 @@ function App() {
         document.getElementById('shot-list-section')?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
     }
-  }, [generate, story, intent, genre, style, numShots, save]);
+  }, [generate, story, intent, targetModel, genre, style, numShots, save]);
 
   const handleHistorySelect = (entry: HistoryEntry) => {
     setStory(entry.storyInput);
     setGenre(entry.genre as Genre);
     setStyle(entry.style as Style);
+    setTargetModel((entry.targetModel as TargetModel) || 'Universal');
     setResult(entry.result);
     setHistoryOpen(false);
     setTimeout(() => {
@@ -86,12 +89,14 @@ function App() {
           intent={intent}
           genre={genre}
           style={style}
+          targetModel={targetModel}
           numShots={numShots}
           status={status}
           onStoryChange={setStory}
           onIntentChange={setIntent}
           onGenreChange={setGenre}
           onStyleChange={setStyle}
+          onTargetModelChange={setTargetModel}
           onNumShotsChange={setNumShots}
           onGenerate={handleGenerate}
           onReset={handleReset}

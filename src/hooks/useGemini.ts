@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { Genre, GenerationStatus, ShotListResult, Style } from '../types';
+import type { Genre, GenerationStatus, TargetModel, ShotListResult, Style } from '../types';
 import { buildShotListPrompt, generateShotList } from '../lib/gemini';
 import { parseAIResponse } from '../lib/parser';
 
@@ -9,13 +9,13 @@ export function useGemini() {
   const [error, setError] = useState<string | null>(null);
 
   const generate = useCallback(
-    async (story: string, intent: string, genre: Genre, style: Style, numShots: number) => {
+    async (story: string, intent: string, targetModel: TargetModel, genre: Genre, style: Style, numShots: number) => {
       setStatus('generating');
       setResult(null);
       setError(null);
 
       try {
-        const prompt = buildShotListPrompt(story, intent, genre, style, numShots);
+        const prompt = buildShotListPrompt(story, intent, targetModel, genre, style, numShots);
         const rawText = await generateShotList(prompt);
         const parsed = parseAIResponse(rawText);
         setResult(parsed);
